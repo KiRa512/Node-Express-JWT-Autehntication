@@ -6,6 +6,11 @@ const handleErrors = (err)=>{
     console.log(err.message,err.code);
     let error = { email: '', password: ''};
 
+    if(err.code === 11000){
+        error.email = 'Email already exists';
+        return error;
+    }
+
     if(err.message.includes('user validation failed')){
         Object.values(err.errors).forEach(({properties})=>{
             console.log(properties)
@@ -50,7 +55,30 @@ module.exports.signUpPost= async(req,res) =>{
 
 }
 
-module.exports.loginPost= (req,res) =>{
-    res.status(200).json({message: 'user login'});
+module.exports.loginPost= async(req,res) =>{
 
+    const {email , password} = req.body;
+    try{
+        const user = await User.login(email,password);
+        const token = createSignToken(user._id);
+        res.cookie('jwt',token,{
+            httpOnly: true,
+            maxAge: 90*24*60*60*1000
+        })
+        console.log(token);
+        res.status(200).json({user:user._id})
+    }
+    catch(err){
+        const errors = handleErrors(err);
+        res.status(400).json({errors});
+    }
+}
+
+
+module.exports.logoutGet = (req,res)=>{
+    res.cookie('jwt','',{
+        httpOnly:true,
+        maxAge: 1
+    })
+    res.redirect('/login');
 }

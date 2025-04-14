@@ -6,6 +6,7 @@ const mainRouter = require('./routes/mainRoutes')
 const cookieParser = require('cookie-parser');
 dotenv.config({ path: './config.env' });
 const app = express();
+const checkUser = require('./middleware/authMiddleware');
 
 // middleware
 app.use(express.static('public'));
@@ -29,6 +30,7 @@ mongoose.connect(dbURI, {
   })
   .catch((err) => console.log('DB Connection Error:', err));
 
+  app.get('*', checkUser);
   app.use(authRoutes);
   app.use(mainRouter);
   
